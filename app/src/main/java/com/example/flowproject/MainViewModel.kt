@@ -20,6 +20,12 @@ class MainViewModel : ViewModel() {
      * ---count , reduce , fold and flatten to combine flows
      */
 
+    private var _stateValue  = MutableStateFlow(0)
+    val stateValue = _stateValue.asStateFlow()
+
+    private var _sharedFlow = MutableSharedFlow<Int>(replay = 5)
+    val sharedFlow = _sharedFlow.asSharedFlow()
+
     val countDownFlow = flow<Int> {
         val startCount = 10
         var currentValue = startCount
@@ -31,11 +37,40 @@ class MainViewModel : ViewModel() {
         }
     }
 
+  private  fun squareNumber(n : Int){
+        viewModelScope.launch {
+            _sharedFlow.emit(n * n)
+        }
+
+
+    }
+
     init {
         // collectFlow()
         // collectLatest()
         // collectFlowTerminalOperators()
         // collectFlowWithFlat()
+
+        squareNumber(3)
+        viewModelScope.launch {
+            sharedFlow.collect {
+                delay(2000)
+                println("FIRST FLOW: The received number is $it")
+            }
+        }
+
+        viewModelScope.launch {
+            sharedFlow.collect {
+                delay(3000)
+                println("SECOND FLOW: The received number is $it")
+            }
+        }
+
+     //   squareNumber(3)
+    }
+
+    fun incrementStateValue(){
+        _stateValue.value += 1
     }
 
     private fun collectLatest() {
