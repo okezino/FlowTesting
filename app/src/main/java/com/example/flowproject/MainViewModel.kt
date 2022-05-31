@@ -6,7 +6,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
-class MainViewModel : ViewModel() {
+class MainViewModel(
+    private val dispatchers : DispatcherProvider
+) : ViewModel() {
 
 
     /**
@@ -27,7 +29,7 @@ class MainViewModel : ViewModel() {
     val sharedFlow = _sharedFlow.asSharedFlow()
 
     val countDownFlow = flow<Int> {
-        val startCount = 10
+        val startCount = 5
         var currentValue = startCount
         emit(startCount)
         while (currentValue > 0) {
@@ -35,10 +37,10 @@ class MainViewModel : ViewModel() {
             currentValue--
             emit(currentValue)
         }
-    }
+    }.flowOn(dispatchers.main)
 
-  private  fun squareNumber(n : Int){
-        viewModelScope.launch {
+ fun squareNumber(n : Int){
+        viewModelScope.launch(dispatchers.main) {
             _sharedFlow.emit(n * n)
         }
 
@@ -51,15 +53,15 @@ class MainViewModel : ViewModel() {
         // collectFlowTerminalOperators()
         // collectFlowWithFlat()
 
-        squareNumber(3)
-        viewModelScope.launch {
+//        squareNumber(3)
+        viewModelScope.launch(dispatchers.main) {
             sharedFlow.collect {
                 delay(2000)
                 println("FIRST FLOW: The received number is $it")
             }
         }
 
-        viewModelScope.launch {
+        viewModelScope.launch(dispatchers.main) {
             sharedFlow.collect {
                 delay(3000)
                 println("SECOND FLOW: The received number is $it")
@@ -74,7 +76,7 @@ class MainViewModel : ViewModel() {
     }
 
     private fun collectLatest() {
-        viewModelScope.launch {
+        viewModelScope.launch(dispatchers.main) {
             countDownFlow.collectLatest { time ->
                 delay(1000)
                 println("The current time is $time")
